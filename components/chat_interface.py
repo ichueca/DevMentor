@@ -27,22 +27,25 @@ class ChatInterface:
             # Mostramos el mensaje del usuario
             st.markdown(prompt)
 
-        # Añadir al historial
-        #self.add_message("user",prompt)
+            # Añadir al historial
+            self.add_message("user",prompt)
 
-        # Generar rspuesta
-        if st.session_state.llm_client:
-            with st.chat_message("assistant"):
-                with st.spinner("Pensando..."):
-                    # Crear el contexto del prompt
-                    context = self._create_context(prompt)
-                    response = st.session_state.llm_client.generate_response(context)
-                    st.write_stream(response)
-        else:
-            with st.chat_message("assistant"):
-                error_msg="❌ No se pudo conectar con el servidor de IA. Verifica la configuración"
-                st.error(error_msg)
-                #self.add_message("assistant", error_msg)
+            # Generar respuesta
+            if st.session_state.llm_client:
+
+                    
+                    with st.chat_message("assistant"):
+                        with st.spinner("Pensando..."):
+                            # Crear el contexto del prompt
+                            context = self._create_context(prompt)
+                            response = st.session_state.llm_client.generate_response(context)
+                            st.write_stream(response)
+                            self.add_message("assistant", response)
+            else:
+                with st.chat_message("assistant"):
+                    error_msg="❌ No se pudo conectar con el servidor de IA. Verifica la configuración"
+                    st.error(error_msg)
+                    self.add_message("assistant", error_msg)
     
 
     def _create_context(self, user_prompt:str) -> str:
@@ -70,3 +73,14 @@ class ChatInterface:
         Responde de manera útil y educativa
 """
         return context
+    
+    def add_message(self, role:str, msg:str):
+        """ Añade el mensaje al historial """
+        st.session_state.messages.append({
+            "role":role,
+            "message":msg
+        })
+        for msg in st.session_state.messages:
+            print(msg)
+        print("-----------------------------")
+        
