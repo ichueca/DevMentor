@@ -2,7 +2,7 @@ import os
 import google.genai as genai
 from openai import OpenAI
 from config import DEFAULT_SETTINGS
-from typing import Generator, Optional, Dict
+from typing import Generator, Optional, Dict, Any
 
 class GeminiClient:
     """Cliente para Google Gemini API."""
@@ -90,3 +90,20 @@ class OpenAIClient:
             
         except Exception as e:
             yield f"Error al generar respuesta: {str(e)}"
+
+def create_llm_provider(provider:str = "gemini") -> Any:
+    """
+    Crea un cliente LLM basado en el proveedor especificado
+
+    Args:
+        provider: El proveedor ('gemnini' u 'openai')
+
+    Returns;
+        Una instancia del cliente seleccionado
+    """
+    if provider.lower() == 'genini':
+        return GeminiClient()
+    elif provider.lower() == 'openai':
+        return OpenAIClient()
+    else:
+        raise ValueError(f"Proveedor no soprtado : {provider}")

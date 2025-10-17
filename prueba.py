@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 try:
-    #client = GeminiClient()
-    client = OpenAIClient()
+    client = GeminiClient()
+    
     print("Cliente configurado correctamente")
     print(client.api_key)
 
