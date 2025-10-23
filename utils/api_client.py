@@ -59,7 +59,7 @@ class OpenAIClient:
         if not self.api_key:
             raise ValueError("Se requiere OPENAI_API_KEY en las variables de entorno")
         
-        self.model = DEFAULT_SETTINGS["model"] # self.model = "gpt-4.0"
+        self.model = DEFAULT_SETTINGS["model_openai"] # self.model = "gpt-4.0"
 
         self.client = OpenAI(
             api_key=self.api_key,

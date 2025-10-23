@@ -1,4 +1,5 @@
-from components import ChatInterface
+from components import ChatInterface, create_sidebar
+
 import streamlit as st
 
 st.set_page_config(
@@ -7,8 +8,14 @@ st.set_page_config(
     layout="wide",
 )
 
+create_sidebar()
+
 st.title("DevMentor AI")
 
 chat = ChatInterface()
 
+chat.display_messages()
+
 chat.handle_user_input()
+
+chat.display_chat_stats()

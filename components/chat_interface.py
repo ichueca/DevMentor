@@ -25,22 +25,28 @@ class ChatInterface:
         """ Maneja la entrada del usuario y genera una respuesta """
         if prompt := st.chat_input("Escribe tu consulta sobre desarrollo..."):
             # Mostramos el mensaje del usuario
-            st.markdown(prompt)
+            #st.markdown(prompt)
+            with st.chat_message("user"):
+                st.markdown(prompt)
 
             # Añadir al historial
             self.add_message("user",prompt)
 
             # Generar respuesta
             if st.session_state.llm_client:
-
-                    
                     with st.chat_message("assistant"):
                         with st.spinner("Pensando..."):
                             # Crear el contexto del prompt
                             context = self._create_context(prompt)
                             response = st.session_state.llm_client.generate_response(context)
-                            st.write_stream(response)
-                            self.add_message("assistant", response)
+                            #st.write_stream(response)
+                            full_response = ""
+                            response_widget = st.empty()
+                            for chunk in response:
+                                if chunk:
+                                    full_response += chunk
+                                    response_widget.markdown(full_response)
+                            self.add_message("assistant", full_response)
             else:
                 with st.chat_message("assistant"):
                     error_msg="❌ No se pudo conectar con el servidor de IA. Verifica la configuración"
@@ -80,7 +86,47 @@ class ChatInterface:
             "role":role,
             "message":msg
         })
-        for msg in st.session_state.messages:
-            print(msg)
-        print("-----------------------------")
+
+
+    def display_messages(self):
+        """ Muestra todos los mensajes del chat """
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["message"])
+
+    
+    def display_chat_stats(self):
+        """ Muestra estadísticas en la barra de estado """
+        st.sidebar.markdown("### 📊 Estadísticas del chat")
+        st.sidebar.metric("Mensajes Totales", len(st.session_state.messages))
+
+        if st.session_state.messages:
+            user_messages = len([m for m in st.session_state.messages if m['role'] == "user"])
+            st.sidebar.metric("Preguntas Realizadas", user_messages)
+
+    def export_chat(self):
+        """
+
+        Exporta el historial del chat como texto
         
+        Returns:
+            El historial ddel chat formateado
+
+        """
+
+        if not st.session_state.messages:
+            return "No hay mensajes para exportar"
+        
+        export_text = "# Historial de Chat - DdevMentor AI\n\n"
+
+        for i, message in enumerate(st.session_state.messages):
+            role = "👤 Usuario" if message["role"] == "user" else "🤖 DevMentor"
+            export_text += f"##Mensaje {i} - {role}\n\n"
+            export_text += f"{message['mensaje']}\n\n"
+            export_text += f"---\n\n"
+        
+        return export_text
+    
+    def clear_chat(self):
+        st.session_state.messages = []
+        st.rerun()
