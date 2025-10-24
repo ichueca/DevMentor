@@ -2,6 +2,7 @@ import streamlit as st
 from utils import GeminiClient, OpenAIClient
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 class ChatInterface:
@@ -32,13 +33,21 @@ class ChatInterface:
             # Añadir al historial
             self.add_message("user",prompt)
 
+            temperature = st.session_state.temperature
+            max_tokens = st.session_state.max_tokens
+
             # Generar respuesta
             if st.session_state.llm_client:
                     with st.chat_message("assistant"):
+                        st.caption(f"Usando: temperature={temperature} - max_tokens={max_tokens}")
                         with st.spinner("Pensando..."):
                             # Crear el contexto del prompt
                             context = self._create_context(prompt)
-                            response = st.session_state.llm_client.generate_response(context)
+                            response = st.session_state.llm_client.generate_response(
+                                context,
+                                temperature=temperature,
+                                max_tokens=max_tokens,
+                            )
                             #st.write_stream(response)
                             full_response = ""
                             response_widget = st.empty()
@@ -104,7 +113,8 @@ class ChatInterface:
             user_messages = len([m for m in st.session_state.messages if m['role'] == "user"])
             st.sidebar.metric("Preguntas Realizadas", user_messages)
 
-    def export_chat(self):
+    @staticmethod
+    def export_chat():
         """
 
         Exporta el historial del chat como texto
@@ -121,12 +131,13 @@ class ChatInterface:
 
         for i, message in enumerate(st.session_state.messages):
             role = "👤 Usuario" if message["role"] == "user" else "🤖 DevMentor"
-            export_text += f"##Mensaje {i} - {role}\n\n"
-            export_text += f"{message['mensaje']}\n\n"
+            export_text += f"## Mensaje {i} - {role}\n\n"
+            export_text += f"{message['message']}\n\n"
             export_text += f"---\n\n"
         
         return export_text
     
-    def clear_chat(self):
+    @staticmethod
+    def clear_chat():
         st.session_state.messages = []
         st.rerun()

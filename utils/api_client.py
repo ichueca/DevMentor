@@ -4,6 +4,7 @@ from openai import OpenAI
 from config import DEFAULT_SETTINGS
 from typing import Generator, Optional, Dict, Any
 
+
 class GeminiClient:
     """Cliente para Google Gemini API."""
 
@@ -32,10 +33,19 @@ class GeminiClient:
         Returns:
             La respuesta generada por el modelo como un objeto Generator
         """
+
+        temperature = kwargs.get("temperature")
+        max_tokens = kwargs.get("max_tokens")
+        gen_config ={
+            "temperature":temperature,
+            "maxOutputTokens":max_tokens
+        }
+
         try:
             response = self.client.models.generate_content_stream(
                 model= self.modelo,
-                contents=prompt
+                contents=prompt,
+                config = gen_config,
             )
 
             for chunks in response:
@@ -81,7 +91,8 @@ class OpenAIClient:
             response =  self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role":"user", "content":prompt}],
-                stream=True
+                stream=True,
+                **kwargs,
             )
 
             for chunk in response:
