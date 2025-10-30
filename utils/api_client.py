@@ -2,7 +2,7 @@ import os
 import google.genai as genai
 from openai import OpenAI
 from config import DEFAULT_SETTINGS
-from typing import Generator, Optional, Dict, Any
+from typing import Generator, List, Optional, Dict, Any
 
 
 class GeminiClient:
@@ -22,14 +22,15 @@ class GeminiClient:
         self.client = genai.Client(api_key=self.api_key)
         self.modelo = DEFAULT_SETTINGS["model"]
 
-    def generate_response(self, prompt:str, **kwargs:Dict) -> Generator:
+    def generate_response(self, prompt:str, messages, **kwargs:Dict) -> Generator:
         """
         Genera una respuesta en streaming usando Gemini
 
         Args:
             prompt: El prompt para enviar al modelo
+            messages: Historial de mensajes previos (opcional)
+                      Formato: {["role":"assistant/user","message":"..."}]
             **kwargs: Parámetros adicionales
-
         Returns:
             La respuesta generada por el modelo como un objeto Generator
         """
@@ -40,11 +41,18 @@ class GeminiClient:
             "temperature":temperature,
             "maxOutputTokens":max_tokens
         }
+        
+        full_prompt = ""
+        if messages:
+            for message in messages:
+                role = "Usuario" if message["role"]  == "user" else "Asistente"
+                full_prompt += f"\n{role}: {message['message']}"
+            full_prompt = "\n"+full_prompt + f"\nUsuario: {prompt}\nAsistente:"
 
         try:
             response = self.client.models.generate_content_stream(
                 model= self.modelo,
-                contents=prompt,
+                contents=full_prompt,
                 config = gen_config,
             )
 
@@ -76,21 +84,30 @@ class OpenAIClient:
             base_url="https://generativelanguage.googleapis.com/v1beta/openai" # SÖLO SI USAMOS GEMINI para simular OpenAI
         )
 
-    def generate_response(self, prompt:str, **kwargs:Dict) -> Generator:
+    def generate_response(self, prompt:str,  messages:Optional[List[Dict[str,str]]], **kwargs:Dict) -> Generator:
         """
         Genera una respuesta en streaming usando OpenAI
 
         Args:
             prompt: El prompt para enviar al modelo
-            **kwargs: Parametros adicionales
+            messages: Historial de mensajes previos (opcional)
+                      Formato: {["role":"assistant/user","message":"..."}]
+            **kwargs: Parametros adicionales (temperature, max_tokens)
 
         Returns:
             La respuesta generada por el modelo como un objeto Generator
         """
         try:
+            message_list = []
+            for message in messages:
+                message_list.append({
+                    "role":message['role'],
+                    "content":message['message']
+                })
+            message_list.append({"role":"user", "content":prompt})
             response =  self.client.chat.completions.create(
                 model=self.model,
-                messages=[{"role":"user", "content":prompt}],
+                messages=message_list,
                 stream=True,
                 **kwargs,
             )

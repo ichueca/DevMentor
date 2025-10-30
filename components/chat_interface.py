@@ -45,6 +45,7 @@ class ChatInterface:
                             context = self._create_context(prompt)
                             response = st.session_state.llm_client.generate_response(
                                 context,
+                                st.session_state.messages,
                                 temperature=temperature,
                                 max_tokens=max_tokens,
                             )
