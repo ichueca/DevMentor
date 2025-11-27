@@ -1,5 +1,5 @@
 import streamlit as st
-from utils import GeminiClient, OpenAIClient
+from utils import GeminiClient, OpenAIClient, PromptType, PromptService
 from dotenv import load_dotenv
 
 
@@ -10,6 +10,9 @@ class ChatInterface:
 
     def __init__(self):
         self.initialize_session_state()
+
+        llm_client = st.session_state.get("llm_client")
+        self.prompt_service = PromptService(llm_Client= llm_client)
     
     def initialize_session_state(self):
         """ Inicializar el estado de sesión """
@@ -42,9 +45,14 @@ class ChatInterface:
                         st.caption(f"Usando: temperature={temperature} - max_tokens={max_tokens}")
                         with st.spinner("Pensando..."):
                             # Crear el contexto del prompt
-                            context = self._create_context(prompt)
+                            #context = self._create_context(prompt)
+
+                            detected_type = self.prompt_service.detect_prompt_type(prompt)
+                            optimized_prompt = self.prompt_service.build_prompt(user_input=prompt, prompt_type=detected_type)
+
                             response = st.session_state.llm_client.generate_response(
-                                context,
+                                #context,
+                                optimized_prompt,
                                 st.session_state.messages,
                                 temperature=temperature,
                                 max_tokens=max_tokens,

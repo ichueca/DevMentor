@@ -1,19 +1,31 @@
 #from utils.api_client import GeminiClient
-from utils import GeminiClient, OpenAIClient
+from utils import GeminiClient, OpenAIClient, PromptService, PromptType
 from dotenv import load_dotenv
 
 load_dotenv()
 
-try:
-    client = GeminiClient()
-    
-    print("Cliente configurado correctamente")
-    print(client.api_key)
+llm_client = OpenAIClient()
 
-    response = client.generate_response("Qué sabes de Jakarta EE. Contesta en un párrafo")
+prompt_service = PromptService(llm_Client=llm_client)
 
-    for chunk in response:
-        print(chunk, end='')
+test_cases = [
+    ("¿Qué es Python?", PromptType.EXPLANATION),
+    ("Revisa este código", PromptType.CODE_REVIEW),
+    ("Tengo un error en mi código", PromptType.DEBUGGING),
+    ("Cuáles son las mejores prácticas?", PromptType.BEST_PRACTICES),
+    ("Hola ¿como estás?", PromptType.GENERAL),
+]
 
-except Exception as e:
-    print(f"Error: {e}")
+print("Probando la clasificación")
+correct = 0
+
+for input_text, expected in test_cases:
+    detected = prompt_service.detect_prompt_type(input_text)
+    status = "✅" if detected == expected else "❌"
+    if detected == expected:
+        correct += 1
+    print(f"   {status} '{input_text}' -> {detected.value} (esperado: {expected.value})")
+
+print(f"📶 Precisión: {correct} / {len(test_cases)} ({100*correct // len(test_cases)}%)")
+
+

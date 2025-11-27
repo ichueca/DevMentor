@@ -81,7 +81,7 @@ class OpenAIClient:
 
         self.client = OpenAI(
             api_key=self.api_key,
-            base_url="https://generativelanguage.googleapis.com/v1beta/openai" # SÖLO SI USAMOS GEMINI para simular OpenAI
+            #base_url="https://generativelanguage.googleapis.com/v1beta/openai" # SÖLO SI USAMOS GEMINI para simular OpenAI
         )
 
     def generate_response(self, prompt:str,  messages:Optional[List[Dict[str,str]]], **kwargs:Dict) -> Generator:
