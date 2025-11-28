@@ -19,3 +19,5 @@ chat.display_messages()
 chat.handle_user_input()
 
 chat.display_chat_stats()
+
+chat.display_prompt_controls()

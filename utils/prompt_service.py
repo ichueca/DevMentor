@@ -5,6 +5,8 @@ y permite utilizar un tamplate espacializado
 from typing import Dict, Any, Optional
 from enum import Enum
 
+from utils.prompt_guardrails import PromptGuardrails
+
 
 class PromptType(Enum):
     """Tipos de prompts disponibles"""
@@ -20,7 +22,7 @@ class PromptType(Enum):
 class PromptService:
     """ Servicio para la gestión de prompts"""
 
-    def __init__(self, llm_Client=None):
+    def __init__(self, llm_Client=None, enable_guardrails: bool = True):
         """
         Inicializa el servicio de prompts
 
@@ -29,6 +31,10 @@ class PromptService:
         """
         self.templates = self._load_templates()
         self.llm_client = llm_Client
+
+        self.enable_guardrails = enable_guardrails
+        if enable_guardrails:
+            self.guardrails = PromptGuardrails()
 
     def _get_classification_prompt(self, user_input:str) -> str:
         """
@@ -187,9 +193,9 @@ class PromptService:
     """
         }
     
-    def build_prompt(self, user_input: str, prompt_type:PromptType = None) -> str:
+    def build_prompt(self, user_input: str, prompt_type:PromptType = None, skip_validation: bool = False) -> tuple:
         """
-        Construye un prompt optimizado combinando el template seleccionado y el user_input
+        Construye un prompt optimizado combinando el template seleccionado y el user_input incluyendo validación de seguridad
 
         Args:
             user_input: El prompt del usuario
@@ -198,6 +204,12 @@ class PromptService:
         Returns:
             El prompt optimizado listo para enviar al modelo
         """
+        if self.enable_guardrails and not skip_validation:
+            is_valid, error_msg = self.guardrails.validate_input(user_input)
+            if not is_valid:
+                return None, self.guardrails.get_safe_error_message()
+
+
         if prompt_type is None:
             prompt_type = self.detect_prompt_type(user_input)
 
@@ -208,4 +220,4 @@ class PromptService:
 
 {user_input}"""
         
-        return final_prompt
+        return final_prompt, None

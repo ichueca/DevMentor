@@ -12,7 +12,7 @@ class ChatInterface:
         self.initialize_session_state()
 
         llm_client = st.session_state.get("llm_client")
-        self.prompt_service = PromptService(llm_Client= llm_client)
+        self.prompt_service = PromptService(llm_Client= llm_client, enable_guardrails=True)
     
     def initialize_session_state(self):
         """ Inicializar el estado de sesión """
@@ -24,6 +24,15 @@ class ChatInterface:
                 st.session_state.llm_client = GeminiClient()
             except ValueError:
                 st.session_state.llm_client = None
+        
+        if 'prompt_mode' not in st.session_state:
+            st.session_state.prompt_mode = 'auto'
+        
+        if 'selected_prompt_type' not in st.session_state:
+            st.session_state.selected_prompt_type = 'general'
+        
+        if 'show_prompt_info' not in st.session_state:
+            st.session_state.show_prompt_info = True
     
     def handle_user_input(self):
         """ Maneja la entrada del usuario y genera una respuesta """
@@ -47,8 +56,19 @@ class ChatInterface:
                             # Crear el contexto del prompt
                             #context = self._create_context(prompt)
 
-                            detected_type = self.prompt_service.detect_prompt_type(prompt)
-                            optimized_prompt = self.prompt_service.build_prompt(user_input=prompt, prompt_type=detected_type)
+                            if st.session_state.prompt_mode == 'auto':
+                                detected_type = self.prompt_service.detect_prompt_type(prompt)
+                            else:
+                                detected_type = PromptType(st.session_state.selected_prompt_type)
+
+                            print(f"Tipo de prompt usado : {detected_type}")
+
+                            optimized_prompt,error = self.prompt_service.build_prompt(user_input=prompt, prompt_type=detected_type)
+
+                            if error:
+                                st.error(f"❌ {error}")
+                                self.add_message("assistant",error)
+                                return
 
                             response = st.session_state.llm_client.generate_response(
                                 #context,
@@ -71,6 +91,75 @@ class ChatInterface:
                     st.error(error_msg)
                     self.add_message("assistant", error_msg)
     
+    def get_prompt_info(self, prompt_type: PromptType) -> dict:
+        """ Retorna información sobre el tipo de prompt empleado"""
+        info = {
+            PromptType.GENERAL: {
+                'name':'General',
+                'description':'Consultas generales sobre desarrollo',
+                'icon':'💬'
+            },
+            PromptType.CODE_REVIEW: {
+                'name':'Revisión de Código',
+                'description':'Análisis y mejora del código',
+                'icon':'🔍'
+            },
+            PromptType.EXPLANATION: {
+                'name':'Explicación',
+                'description':'Aclaraciones sobre conceptos técnicos',
+                'icon':'📓'
+            },
+            PromptType.DEBUGGING: {
+                'name':'Depuración',
+                'description':'Resolución de problemas y errores',
+                'icon':'🐛'
+            },
+            PromptType.BEST_PRACTICES:{
+                'name':'Mejores Prácticas',
+                'description':'Recomendaciones y estándares',
+                'icon':'⭐'
+            },
+            PromptType.ARCHITECTURE:{
+                'name':'Arquitectura',
+                'description':'Diseño de sistemas y patrones',
+                'icon':'🏗️'
+            },
+            PromptType.LEARNING:{
+                'name':'Aprendizaje',
+                'description':'Guías y roadmaps de aprendizaje',
+                'icon':'🧑‍🎓'
+            }
+            
+        }
+        return info.get(prompt_type, PromptType.GENERAL)
+
+
+    def display_prompt_controls(self):
+        """ Muestra controles del sistema de prompts en el sidebar """
+        st.sidebar.markdown("### 🎯 Sistema de Prompts")
+
+        st.session_state.prompt_mode = st.sidebar.radio(
+            "Modo de Detección",
+            ['auto','manual'],
+            format_func=lambda x: {
+                'auto': '🤖 Automático',
+                'manual': '🙍‍♂️ Manual'
+            }[x],
+            help="Automático: detecta el tipo de consulta\nManual: selecciona manualmente"
+        )
+
+        if st.session_state.prompt_mode == 'manual':
+            prompt_types = {}
+            for prompt_type in PromptType:
+                info = self.get_prompt_info(prompt_type)
+                prompt_types[prompt_type.value] = f"{info['icon']} {info['name']}"
+            
+            st.session_state.selected_prompt_type = st.sidebar.selectbox(
+                "Tipo de Consulta",
+                list(prompt_types.keys()),
+                format_func=lambda x: prompt_types[x],
+                help="Selecciona el tipo más apropiado para tu consulta"
+            )
 
     def _create_context(self, user_prompt:str) -> str:
         """
