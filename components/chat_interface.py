@@ -12,7 +12,7 @@ class ChatInterface:
         self.initialize_session_state()
 
         llm_client = st.session_state.get("llm_client")
-        self.prompt_service = PromptService(llm_Client= llm_client, enable_guardrails=True)
+        self.prompt_service = PromptService(llm_Client= llm_client, enable_guardrails=True,analysis_llm_client=llm_client)
     
     def initialize_session_state(self):
         """ Inicializar el estado de sesión """

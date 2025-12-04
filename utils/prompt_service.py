@@ -22,7 +22,7 @@ class PromptType(Enum):
 class PromptService:
     """ Servicio para la gestión de prompts"""
 
-    def __init__(self, llm_Client=None, enable_guardrails: bool = True):
+    def __init__(self, llm_Client=None, enable_guardrails: bool = True, analysis_llm_client=None):
         """
         Inicializa el servicio de prompts
 
@@ -31,6 +31,7 @@ class PromptService:
         """
         self.templates = self._load_templates()
         self.llm_client = llm_Client
+        self.analysis_llm_client = analysis_llm_client
 
         self.enable_guardrails = enable_guardrails
         if enable_guardrails:
@@ -195,7 +196,10 @@ class PromptService:
     
     def build_prompt(self, user_input: str, prompt_type:PromptType = None, skip_validation: bool = False) -> tuple:
         """
-        Construye un prompt optimizado combinando el template seleccionado y el user_input incluyendo validación de seguridad
+        Construye un prompt optimizado con validación de seguridad en dos capas
+
+        Capa 1: Regex 
+        Capa 2: LLM de análisis
 
         Args:
             user_input: El prompt del usuario
@@ -204,11 +208,22 @@ class PromptService:
         Returns:
             El prompt optimizado listo para enviar al modelo
         """
+        
+        # Capa 1 (Regex)
         if self.enable_guardrails and not skip_validation:
             is_valid, error_msg = self.guardrails.validate_input(user_input)
             if not is_valid:
+                print("Detectado ataque con Regex")
                 return None, self.guardrails.get_safe_error_message()
-
+        # Capa 2 (analizando con LLM)
+        if self.enable_guardrails and self.analysis_llm_client and not skip_validation:
+            is_attack, confidence = self.guardrails.detect_attack_with_llm(
+                user_input,
+                self.analysis_llm_client
+            )
+            if is_attack and confidence in ["ALTO","MEDIO"]:
+                print("Detectado ataque con LLM")
+                return None, self.guardrails.get_safe_error_message()
 
         if prompt_type is None:
             prompt_type = self.detect_prompt_type(user_input)

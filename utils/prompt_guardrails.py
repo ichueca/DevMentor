@@ -99,3 +99,40 @@ class PromptGuardrails:
         - "SOSPECHOSO" si hay indicios pero no es concluyente
 
         Respuesta:"""
+    
+    def detect_attack_with_llm(self, user_input: str, llm_client) -> tuple:
+        """
+        Usa un LLM para detectar ataques de prompt injection
+
+        Args:
+            user_input: Input del usuario a analizar
+            llm_client: Cliente LLM para el análisis
+
+        Returns:
+            Tupla (es_ataque, confianza)
+            - es_ataque: True si se detectó un ataque
+            - confianza: "ALTO","MEDIO","BAJO"
+
+        """
+        if not llm_client:
+            return False, "BAJO"
+        
+        try:
+            analysis_prompt = self._get_attack_detection_prompt(user_input)
+            response_generator = llm_client.generate_response(analysis_prompt, {})
+            response = ""
+            for chunk in response_generator:
+                if chunk:
+                    response += chunk
+            print(f"Respuesta del análisis : {response}")
+            response = response.strip().upper()
+
+            if "ATAQUE" in response:
+                return True, "ALTO"
+            elif "SOSPECHOSO" in response:
+                return True, "MEDIO"
+            else:
+                return False, "BAJO"
+        except Exception as e:
+            print(f"⚠️ Error en análisis LLM: {e}")
+            return False, "BAJO"
