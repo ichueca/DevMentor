@@ -3,6 +3,9 @@ import google.genai as genai
 from openai import OpenAI
 from config import DEFAULT_SETTINGS
 from typing import Generator, List, Optional, Dict, Any
+# Para hacer peticiones HTTP
+import requests 
+import json
 
 
 class GeminiClient:
@@ -119,6 +122,59 @@ class OpenAIClient:
         except Exception as e:
             yield f"Error al generar respuesta: {str(e)}"
 
+class OllamaClient:
+    """ Cliente para conectar con Ollama """
+
+    def __init__(self, model: str="gpt-oss:20b", base_url:str = "http://185.193.11.153:11434"):
+        """
+        Inicializa el cliente de Ollama
+
+        Args:
+            model: Modelo a usar (phi4-mini, gpt-oss:20b, ...)
+            base_url: El equipo / puerto del servicio de Ollama
+        """
+        self.model = model
+        self.base_url = base_url
+        self.api_key = "local"
+        self.model = DEFAULT_SETTINGS["model_ollama"]
+
+    def generate_response(self, prompt:str, messages:Optional[List[Dict[str,str]]], **kwargs) -> Generator[str, None, None]:
+        """
+        Genera una respuesta usando Ollama
+
+        Args:
+            prompt: El prompt del usuario
+            **kwargs: Parámetros adicionales (temperatura, etc)
+
+        Yields:
+            Chunks de la respuesta
+        """
+        payload = {
+            "model":self.model,
+            "prompt":prompt,
+            "stream":True,
+            **kwargs,
+        }
+        url = f"{self.base_url}/api/generate"
+        try:
+            response = requests.post(url, json=payload, stream=True)
+            response.raise_for_status()
+
+            for line in response.iter_lines():
+                if line:
+                    data = json.loads(line)
+                    if "response" in data:
+                        yield data["response"]
+                    
+                    
+        except requests.exceptions.ConnectionError:
+            yield "❌ Error: No se puede conectar a Ollama. Compruebe su conexión"
+        except Exception as ex:
+            yield f"❌ Error en Ollama: {ex}"
+
+
+
+
 def create_llm_provider(provider:str = "gemini") -> Any:
     """
     Crea un cliente LLM basado en el proveedor especificado
@@ -133,5 +189,7 @@ def create_llm_provider(provider:str = "gemini") -> Any:
         return GeminiClient()
     elif provider.lower() == 'openai':
         return OpenAIClient()
+    elif provider.lower() == 'ollama':
+        return OllamaClient()
     else:
         raise ValueError(f"Proveedor no soprtado : {provider}")

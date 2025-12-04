@@ -8,11 +8,11 @@ load_dotenv()
 class ChatInterface:
     """ Gestiona la interfaz del chat """
 
-    def __init__(self):
+    def __init__(self, analysis_llm_client=None):
         self.initialize_session_state()
-
+        self.analysis_llm_client = analysis_llm_client
         llm_client = st.session_state.get("llm_client")
-        self.prompt_service = PromptService(llm_Client= llm_client, enable_guardrails=True,analysis_llm_client=llm_client)
+        self.prompt_service = PromptService(llm_Client= llm_client, enable_guardrails=True, analysis_llm_client=analysis_llm_client)
     
     def initialize_session_state(self):
         """ Inicializar el estado de sesión """

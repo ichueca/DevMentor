@@ -1,6 +1,6 @@
 from datetime import datetime
 import streamlit as st
-from utils import GeminiClient, OpenAIClient
+from utils import GeminiClient, OpenAIClient, OllamaClient
 from components import ChatInterface
 from config import DEFAULT_SETTINGS
 
@@ -17,7 +17,7 @@ def create_sidebar():
         # Seleccionar el modelo
         model_provider = st.selectbox(
             "Proveedor de IA:",
-            ["Gemini","OpenAI"],
+            ["Gemini","OpenAI","Ollama"],
             help="Seleccione el proveedor de la IA a utilizar"
         )
         _display_connection_status(model_provider)
@@ -105,6 +105,13 @@ def _display_connection_status(provider:str):
             client = OpenAIClient()
             if client.api_key:
                 st.success("✅ OpenAI conectado")
+                st.session_state.llm_client = client
+            else:
+                st.error("❌ OpenAI no configurado")
+        elif provider == "Ollama":
+            client = OllamaClient()
+            if client.api_key:
+                st.success("✅ Ollama conectado")
                 st.session_state.llm_client = client
             else:
                 st.error("❌ OpenAI no configurado")

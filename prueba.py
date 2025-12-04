@@ -1,9 +1,10 @@
 #from utils.api_client import GeminiClient
-from utils import GeminiClient, OpenAIClient, PromptService, PromptType
+from utils import OpenAIClient,OllamaClient, PromptService, PromptType
 from dotenv import load_dotenv
 
 load_dotenv()
 
+"""
 llm_client = OpenAIClient()
 
 prompt_service = PromptService(llm_Client=llm_client)
@@ -28,4 +29,12 @@ for input_text, expected in test_cases:
 
 print(f"📶 Precisión: {correct} / {len(test_cases)} ({100*correct // len(test_cases)}%)")
 
+"""
+llm_client = OllamaClient()
+response_generator = llm_client.generate_response("hola", {})
+response = ""
+for chunk in response_generator:
+    if chunk:
+        response += chunk
 
+print(f"Respuesta del análisis : {response}")
