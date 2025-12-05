@@ -149,9 +149,24 @@ class OllamaClient:
         Yields:
             Chunks de la respuesta
         """
+        if messages:
+            full_prompt = ""
+            for msg in messages:
+                role = msg.get("role","user")
+                content = msg.get("message","")
+                if role == "system":
+                    full_prompt += f"{content}\n\n"
+                elif role == "user":
+                    full_prompt += f"Usuario: {content}\n"
+                elif role == "assistant":
+                    full_prompt += f"Asistente: {content}\n"
+            full_prompt += "Asistente:"
+        else:
+            full_prompt = prompt
+        print(full_prompt)
         payload = {
             "model":self.model,
-            "prompt":prompt,
+            "prompt":full_prompt,
             "stream":True,
             **kwargs,
         }
