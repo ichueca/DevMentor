@@ -81,8 +81,67 @@ def create_sidebar():
             st.session_state.temperature = temperature
             st.session_state.max_tokens = max_tokens
 
+        st.divider()
+        st.sidebar.markdown("### ⚙️ Optimización de Contexto")
+        context_strategy = st.sidebar.selectbox(
+            "Estrategia de Optimización",
+            ["Ninguna","Ventana Deslizante", "Resumen Automático", "Selección Inteligente"],
+            help="Seleccione el método de optimización del historial" 
+        )
+        st.session_state.context_strategy = context_strategy
 
+        if 'context_stats' in st.session_state:
+            st.sidebar.markdown("### 📶 Estadísticas de Optimización")
+            stats = st.session_state.context_stats
 
+            strategy_name = st.session_state.get("context_strategy","Ninguna")
+
+            if strategy_name == "Resumen Automático":
+                col1, col2 = st.sidebar.columns(2)
+                with col1:
+                    st.metric(
+                        "Recientes Mantenidos",
+                        stats.get('max_messages',0)
+                    )
+                with col2:
+                    st.metric(
+                        "Optimizaciones",
+                        stats.get('optimization_count',0)
+                    )
+                st.metric(
+                    "Promedio Mantenido",
+                    f"{stats.get('average_messages_kept',0):.1f}"
+                )
+            elif strategy_name == "Ventana Deslizante":
+                col1, col2 = st.sidebar.columns(2)
+                with col1:
+                    st.metric(
+                        "Recientes Mantenidos",
+                        stats.get('keep_recent',0)
+                    )
+                with col2:
+                    st.metric(
+                        "Umbral Resumen",
+                        stats.get('summarize_threshold',0)
+                    )
+                st.metric(
+                    "Optimizaciones",
+                    f"{stats.get('optimizations',0)}"
+                )
+            elif strategy_name == "Selección Inteligente":
+                col1, col2 = st.sidebar.columns(2)
+                with col1:
+                    st.metric(
+                        "Máximo Seleccionado",
+                        stats.get('max_selected',0)
+                    )
+                with col2:
+                    st.metric(
+                        "Optimizaciones",
+                        f"{stats.get('optimizations',0)}"
+                    )
+                st.success("✅ Mensajes selecionados con éxito")
+        st.divider()
 
 
 

@@ -163,7 +163,6 @@ class OllamaClient:
             full_prompt += "Asistente:"
         else:
             full_prompt = prompt
-        print(full_prompt)
         payload = {
             "model":self.model,
             "prompt":full_prompt,

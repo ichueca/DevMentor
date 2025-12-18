@@ -1,6 +1,8 @@
 import streamlit as st
 from utils import GeminiClient, OpenAIClient, PromptType, PromptService
 from dotenv import load_dotenv
+from utils import SummaryStrategy, SlidingWindowStrategy, SmartSelectionStrategy
+from utils.api_client import OllamaClient
 
 
 load_dotenv()
@@ -33,6 +35,13 @@ class ChatInterface:
         
         if 'show_prompt_info' not in st.session_state:
             st.session_state.show_prompt_info = True
+        
+        if 'context_strategy' not in st.session_state:
+            st.session_state.context_strategy = "Ninguna"
+        
+        if 'context_stats' not in st.session_state:
+            st.context_stats = None
+        
     
     def handle_user_input(self):
         """ Maneja la entrada del usuario y genera una respuesta """
@@ -70,6 +79,7 @@ class ChatInterface:
                                 self.add_message("assistant",error)
                                 return
 
+                            """
                             response = st.session_state.llm_client.generate_response(
                                 #context,
                                 optimized_prompt,
@@ -77,6 +87,22 @@ class ChatInterface:
                                 temperature=temperature,
                                 max_tokens=max_tokens,
                             )
+                            """
+                            strategy_name = st.session_state.get("context_strategy","Ninguna")
+                            optimized_messages = self._optimize_messages(
+                                messages= st.session_state.messages,
+                                strategy_name= strategy_name,
+                                new_query=prompt
+                            )
+
+                            response = st.session_state.llm_client.generate_response(
+                                optimized_prompt,
+                                optimized_messages,
+                                temperature=temperature,
+                                max_tokens=max_tokens,
+                            )
+
+
                             #st.write_stream(response)
                             full_response = ""
                             response_widget = st.empty()
@@ -210,6 +236,22 @@ class ChatInterface:
         if st.session_state.messages:
             user_messages = len([m for m in st.session_state.messages if m['role'] == "user"])
             st.sidebar.metric("Preguntas Realizadas", user_messages)
+
+    def _optimize_messages(self, messages, strategy_name, new_query):
+        """ Optimiza los mensajes en base a la estrategia """
+        if strategy_name == "Ninguna":
+            return messages
+        
+        elif strategy_name == "Ventana Deslizante":
+            strategy = SlidingWindowStrategy()
+        elif strategy_name == "Resumen Automático":
+            strategy = SummaryStrategy(OllamaClient())
+        else:
+            strategy = SmartSelectionStrategy(OllamaClient(),max_selected=3)
+
+        optimized = strategy.optimize(messages, new_query)
+        st.session_state.context_stats = strategy.get_stats()
+        return optimized
 
     @staticmethod
     def export_chat():
