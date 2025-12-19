@@ -243,9 +243,9 @@ class ChatInterface:
             return messages
         
         elif strategy_name == "Ventana Deslizante":
-            strategy = SlidingWindowStrategy()
+            strategy = SlidingWindowStrategy(max_messages=5)
         elif strategy_name == "Resumen Automático":
-            strategy = SummaryStrategy(OllamaClient())
+            strategy = SummaryStrategy(llm_client=OllamaClient(),keep_recent=3,summarize_thresold=7)
         else:
             strategy = SmartSelectionStrategy(OllamaClient(),max_selected=3)
 
