@@ -3,6 +3,8 @@ from utils import GeminiClient, OpenAIClient, PromptType, PromptService
 from dotenv import load_dotenv
 from utils import SummaryStrategy, SlidingWindowStrategy, SmartSelectionStrategy
 from utils.api_client import OllamaClient
+from utils import JSONStorage
+import uuid
 
 
 load_dotenv()
@@ -41,6 +43,15 @@ class ChatInterface:
         
         if 'context_stats' not in st.session_state:
             st.context_stats = None
+
+        if 'storage' not in st.session_state:
+            st.session_state.storage = JSONStorage()
+        
+        if 'current_conversation_id' not in st.session_state:
+            st.session_state.current_conversation_id = None
+        
+        if 'current_cpnversation_name' not in st.session_state:
+            st.session_state.current_conversation_name = "Nueva Conversación"
         
     
     def handle_user_input(self):
@@ -252,6 +263,29 @@ class ChatInterface:
         optimized = strategy.optimize(messages, new_query)
         st.session_state.context_stats = strategy.get_stats()
         return optimized
+    
+    def save_current_conversation(self, name: str = None) -> bool:
+        """
+        Guarda la conversación actual
+        """
+        if not st.session_state.messages:
+            st.warning("⚠️No hay mensajes para guardar")
+            return False
+        
+        conversation_name = name or st.session_state.current_conversation_name
+
+        if st.session_state.current_conversation_id is None:
+            st.session_state.current_conversation_id = f"conv_{uuid.uuid4().hex[:8]}"
+
+        success = st.session_state.storage.save_conversation(
+            conversation_id=st.session_state.current_conversation_id,
+            name=conversation_name,
+            messages=st.session_state.messages
+        )
+
+        if success:
+            st.session_state.current_conversation_name = conversation_name
+            st.success(f"✅ Conversación Guardada ; {conversation_name}")
 
     @staticmethod
     def export_chat():
