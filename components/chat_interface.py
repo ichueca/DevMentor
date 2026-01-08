@@ -25,7 +25,7 @@ class ChatInterface:
         
         if 'llm_client' not in st.session_state:
             try:
-                st.session_state.llm_client = GeminiClient()
+                st.session_state.llm_client = OllamaClient()
             except ValueError:
                 st.session_state.llm_client = None
         
@@ -122,6 +122,7 @@ class ChatInterface:
                                     full_response += chunk
                                     response_widget.markdown(full_response)
                             self.add_message("assistant", full_response)
+                            self.update_current_conversation()
             else:
                 with st.chat_message("assistant"):
                     error_msg="❌ No se pudo conectar con el servidor de IA. Verifica la configuración"
@@ -286,6 +287,48 @@ class ChatInterface:
         if success:
             st.session_state.current_conversation_name = conversation_name
             st.success(f"✅ Conversación Guardada ; {conversation_name}")
+        
+        return success
+    
+    def load_conversation(self, conversation_id:str) -> bool:
+        """ 
+        Carga una conversación guardada,
+
+        Args:
+            cinversatiuon_id: ID de la conversación
+        
+        Returns:
+            True si se cargó correctamente
+        """
+        loaded = st.session_state.storage.load_conversation(conversation_id)
+
+        if loaded:
+            st.session_state.current_conversation_id = loaded['id']
+            st.session_state.current_conversation_name = loaded['name']
+            st.session_state.messages = loaded['messages']
+            st.success(f"✅ Conversación cargada: {loaded['name']}")
+            return True
+        else:
+            st.error("❌ Mo se pudo cargar la conversación")
+            return False
+            
+    def update_current_conversation(self) -> bool:
+        """
+        Actualiza la conversación actual en el almacenamiento
+
+        Se llama automáticamente después de cada mensaje
+
+        Returns:
+            True si se actualizó correctamente
+        """
+        if st.session_state.current_conversation_id is None:
+            return self.save_current_conversation()
+        
+        success = st.session_state.storage.update_conversation(
+            conversation_id = st.session_state.current_conversation_id,
+            messages = st.session_state.messages
+        )
+        return success
 
     @staticmethod
     def export_chat():

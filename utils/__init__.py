@@ -4,7 +4,7 @@ from .prompt_guardrails import PromptGuardrails
 from .token_manager import TokenManager
 from .context_strategies import SlidingWindowStrategy, SmartSelectionStrategy, SummaryStrategy
 from .json_storage import JSONStorage
-from conversation_storage import ConversationStorage
+from .conversation_storage import ConversationStorage
 
 __all__ = ['GeminiClient', 'OpenAIClient', 'OllamaClient', 
            'PromptService', 'PromptType', 'PromptGuardrails', 

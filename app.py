@@ -10,11 +10,11 @@ st.set_page_config(
     layout="wide",
 )
 
+chat = ChatInterface(analysis_llm_client=OllamaClient())
+
 create_sidebar()
 
 st.title("DevMentor AI")
-
-chat = ChatInterface(analysis_llm_client=OllamaClient())
 
 chat.display_messages()
 
