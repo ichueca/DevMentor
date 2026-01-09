@@ -50,7 +50,7 @@ class ChatInterface:
         if 'current_conversation_id' not in st.session_state:
             st.session_state.current_conversation_id = None
         
-        if 'current_cpnversation_name' not in st.session_state:
+        if 'current_conversation_name' not in st.session_state:
             st.session_state.current_conversation_name = "Nueva Conversación"
         
     
@@ -64,7 +64,8 @@ class ChatInterface:
 
             # Añadir al historial
             self.add_message("user",prompt)
-
+            if len(st.session_state.messages) == 1:
+                st.session_state.current_conversation_name = self.generate_conversation_title(prompt)
             temperature = st.session_state.temperature
             max_tokens = st.session_state.max_tokens
 
@@ -322,13 +323,51 @@ class ChatInterface:
             True si se actualizó correctamente
         """
         if st.session_state.current_conversation_id is None:
-            return self.save_current_conversation()
+            # Conversación NUEVA. La guardamos
+            success =  self.save_current_conversation()
+            if success:
+                st.rerun()
+            return success
         
+        # Actualizamos la conversación
         success = st.session_state.storage.update_conversation(
             conversation_id = st.session_state.current_conversation_id,
             messages = st.session_state.messages
         )
         return success
+    
+    def generate_conversation_title(self, first_message: str) -> str:
+        """
+        Genera un título automático para la conversación empleando el LLM
+
+        Args:
+            first_message: El mensaje enviado por el usuario
+        """
+
+        title_prompt = f"""
+        Genera un título CORTO (máximo 5 palabras) y descriptivo para una conversación que comienza con:
+
+        {first_message}
+
+        RESPONDE SÓLO CON EL TÍTULO, sin aclaraciones ni comentarios
+        """
+        
+        generador = st.session_state.llm_client.generate_response(
+            prompt= title_prompt,
+            messages=[],
+            temperature=0.8,
+            max_tokens=20
+        )
+        title = ""
+        for chunk in generador:
+             if chunk:
+                title += chunk
+        
+        if title.strip():
+            return title.strip()
+        else:
+            return first_message[:50]
+
 
     @staticmethod
     def export_chat():

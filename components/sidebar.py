@@ -23,6 +23,89 @@ def create_sidebar():
         _display_connection_status(model_provider)
 
         st.divider
+        conversations = st.session_state.storage.list_conversations()
+
+        if conversations:
+            conversation_options = [
+                f"📄 {conv['name']} ({conv['message_count']})" for conv in conversations
+            ]
+            conversation_options.insert(0, "-- Seleccione --")
+            default_index = 0
+            if st.session_state.current_conversation_id:
+                for i, conv in enumerate(conversations):
+                    if conv['id'] == st.session_state.current_conversation_id:
+                        default_index = i + 1
+                        break
+
+            selected_option = st.selectbox(
+                "📁 Conversaciones guardadas",
+                conversation_options,
+                index=default_index,
+                help="Seleccione una conversación para cargarla"
+            )
+            selected_index = conversation_options.index(selected_option)
+            if selected_index != 0:
+                selected_conv = conversations[selected_index - 1]
+                # Si no es la conversación activa
+                if st.session_state.current_conversation_id != selected_conv['id']:
+                    # La cargamos
+                    chat_interface = ChatInterface()
+                    chat_interface.load_conversation(selected_conv['id'])
+                    st.rerun()
+
+                st.markdown("**Acciones:**")
+                col1,col2 = st.columns(2)
+
+                with col1:
+                    if st.button("✏️ Renombrar", use_container_width=True):
+                        st.session_state.rename_mode = selected_conv['id']
+                with col2:
+                    if st.button("🗑️ Eliminar", use_container_width=True):
+                        if st.session_state.current_conversation_id == selected_conv['id']:
+                            st.session_state.messages = []
+                            st.session_state.current_conversation_id = None
+                            st.session_state.current_conversation_name = "Nueva Conversación"
+                        
+                        st.session_state.storage.delete_conversation(selected_conv['id'])
+                        st.success("✅ Conversación Eliminada!")
+                        st.rerun()
+                
+                if st.button("➕ Nueva Conversación", use_container_width=True):
+                    st.session_state.messages = []
+                    st.session_state.current_conversation_id = None
+                    st.session_state.current_conversation_name = "Nueva Conversación"
+                    st.rerun()
+                
+                if 'rename_mode' in st.session_state and st.session_state.rename_mode:
+                    conv_id = st.session_state.rename_mode
+                    conv = st.session_state.storage.load_conversation(conv_id)
+                    if conv:
+                        st.markdown("**Renombrar Conversación**")
+                        new_name = st.text_input(
+                            "Nuevo Nombre:",
+                            value=conv['name'],
+                            key=f"rename_input_{conv_id}"
+                        )
+
+                        col1,col2 = st.columns(2)
+                        with col1:
+                            if st.button("✅ Guardar", use_container_width=True):
+                                conv['name'] = new_name
+                                st.session_state.storage.save_conversation(
+                                    conversation_id = conv_id,
+                                    name = new_name,
+                                    messages = conv['messages']
+                                )
+                                st.session_state.rename_mode = None
+                                st.success(f"✅ Conversación renombrada a {new_name}")
+                                st.rerun()
+                        
+                        with col2:
+                            if st.button("❌ Cancelar", use_container_width=True):
+                                st.session_state.rename_mode = None
+                                st.rerun()
+
+        st.divider()
 
         st.markdown("### 💬 Controles del Chat")
 
@@ -59,51 +142,7 @@ def create_sidebar():
                 )
         
         st.divider()
-        conversations = st.session_state.storage.list_conversations()
-
-        if conversations:
-            conversation_options = [
-                f"📄 {conv['name']} ({conv['message_count']})" for conv in conversations
-            ]
-            conversation_options.insert(0, "-- Seleccione --")
-            selected_option = st.selectbox(
-                "📁 Conversaciones guardadas",
-                conversation_options,
-                help="Seleccione una conversación para cargarla"
-            )
-            selected_index = conversation_options.index(selected_option)
-            if selected_index != 0:
-                selected_conv = conversations[selected_index - 1]
-                # Si no es la conversación activa
-                if st.session_state.current_conversation_id != selected_conv['id']:
-                    # La cargamos
-                    chat_interface = ChatInterface()
-                    chat_interface.load_conversation(selected_conv['id'])
-                    st.rerun()
-
-                st.markdown("**Acciones:**")
-                col1,col2 = st.columns(2)
-
-                with col1:
-                    if st.button("✏️ Renombrar", use_container_width=True):
-                        st.session_state.rename_mode = selected_conv['id']
-
-                with col2:
-                    if st.button("🗑️ Eliminar", use_container_width=True):
-                        if st.session_state.current_conversation_id == selected_conv['id']:
-                            st.session_state.messages = []
-                            st.session_state.current_conversation_id = None
-                            st.session_state.current_conversation_name = "Nueva Conversación"
-                        
-                        st.session_state.storage.delete_conversation(selected_conv['id'])
-                        st.success("✅ Conversación Eliminada!")
-                        st.rerun()
-                
-                if st.button("➕ Nueva Conversación", use_container_width=True):
-                    st.session_state.messages = []
-                    st.session_state.current_conversation_id = None
-                    st.session_state.current_conversation_name = "Nueva Conversación"
-                    st.rerun()
+        
 
         st.divider()
         with st.expander("🔧 Configuración Avanzada"):

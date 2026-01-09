@@ -1,0 +1,16 @@
+{
+  "id": "conv_4fbb0ebb",
+  "name": "Funcionamiento de Servlets Jakarta EE",
+  "created_at": "2026-01-09T09:33:42.288282",
+  "updated_at": "2026-01-09T09:33:42.288294",
+  "messages": [
+    {
+      "role": "user",
+      "message": "Me gustaría saber como funcionan los Servlets de Jakarta EE. En un párrafo por favor"
+    },
+    {
+      "role": "assistant",
+      "message": "Los Servlets de Jakarta EE son componentes Java que ejecutan el modelo de petición‑respuesta de la web. Cuando un cliente envía una solicitud HTTP, el contenedor (por ejemplo, Tomcat, WildFly o Payara) la dirige al servlet que corresponde según la configuración de *web.xml* o anotaciones `@WebServlet`. El servlet extiende `jakarta.servlet.http.HttpServlet` y sobrescribe métodos como `doGet()`, `doPost()`, `doPut()`, etc., para procesar la solicitud y generar una respuesta mediante el objeto `HttpServletResponse`. Internamente, el contenedor gestiona la vida útil del servlet (instanciación, inicialización, destrucción), el hilo de ejecución y la interacción con recursos de la aplicación, permitiendo así construir aplicaciones web robustas y escalables."
+    }
+  ]
+}

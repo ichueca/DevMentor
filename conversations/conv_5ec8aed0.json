@@ -1,0 +1,16 @@
+{
+  "id": "conv_5ec8aed0",
+  "name": "Implementar internacionalización en Spring",
+  "created_at": "2026-01-09T09:38:21.918291",
+  "updated_at": "2026-01-09T09:38:21.918311",
+  "messages": [
+    {
+      "role": "user",
+      "message": "¿Como implemento la internacionalización en Spring? Se breve"
+    },
+    {
+      "role": "assistant",
+      "message": "**Implementación rápida de i18n en Spring Boot**\n\n| Paso | Acción | Código / configuración |\n|------|--------|------------------------|\n| 1 | **Propiedades de mensajes** | Crea archivos `messages_XX.properties` (ej. `messages_en.properties`, `messages_es.properties`) en `src/main/resources`. Ejemplo:<br>`welcome=Welcome`<br>`welcome=Bienvenido` |\n| 2 | **Definir MessageSource** | Spring Boot crea uno automáticamente, pero puedes personalizarlo: <br>```java\\n@Bean\\npublic MessageSource messageSource() {\\n    ReloadableResourceBundleMessageSource source = new ReloadableResourceBundleMessageSource();\\n    source.setBasename(\\\"classpath:messages\\\");\\n    source.setDefaultEncoding(\\\"UTF-8\\\");\\n    return source;\\n}\\n``` |\n| 3 | **Resolver de locales** | Añade un `LocaleResolver` y un `LocaleChangeInterceptor` para cambiar idioma vía parámetro `?lang=`. <br>```java\\n@Bean\\npublic LocaleResolver localeResolver() {\\n    SessionLocaleResolver slr = new SessionLocaleResolver();\\n    slr.setDefaultLocale(Locale.ENGLISH);\\n    return slr;\\n}\\n\\n@Bean\\npublic LocaleChangeInterceptor localeChangeInterceptor() {\\n    LocaleChangeInterceptor lci = new LocaleChangeInterceptor();\\n    lci.setParamName(\\\"lang\\\");\\n    return lci;\\n}\\n\\n@Override\\npublic void addInterceptors(InterceptorRegistry registry) {\\n    registry.addInterceptor(localeChangeInterceptor());\\n}\\n``` |\n| 4 | **Usar mensajes** | En controladores: `messageSource.getMessage(\"welcome\", null, locale)`.<br>En vistas (Thymeleaf): `#{welcome}`.<br>En JSP: `<spring:message code=\"welcome\"/>`. |\n| 5 | **Cambiar idioma** | Accede a URL con `?lang=es` o `?lang=en` y la aplicación cambiará el locale automáticamente. |\n\nCon estos pasos tienes i18n listo en una aplicación Spring (Boot o MVC). ¡Listo!"
+    }
+  ]
+}
