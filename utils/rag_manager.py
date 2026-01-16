@@ -30,7 +30,8 @@ class RagManager:
             embedding_fn:Callable = ollama_embedding_fn, 
             collection_name:str = "documents",
             chunk_size: int = 1000,
-            chunk_overlap: int = 200
+            chunk_overlap: int = 200,
+            persist_path:str = "./qdrant_storage"
         ):
         """
         Inicializar el RAG Manager
@@ -50,7 +51,14 @@ class RagManager:
             separators=["\n\n", "\n", ".", " ", ""]
         )
 
-        self.client = QdrantClient(":memory:") 
+        if persist_path:
+            self.client = QdrantClient(path=persist_path)
+            logger.info(f"Persistencia: {persist_path}")
+        else:
+            self.client = QdrantClient(":memory:") 
+            logger.info("Modo memoria")
+
+        self.collection_created = False
     
     def _ensure_collection_exists(self, vector_size:int):
         """ Crear la colección si no existe """
@@ -94,7 +102,7 @@ class RagManager:
                 # Generamos el embedding del chunk
                 embedding = self.embedding_fn(chunk)
 
-                if not embedding:
+                if embedding is None or len(embedding) == 0:
                     continue
 
                 # Creamos un PointStruct de Qdrant
